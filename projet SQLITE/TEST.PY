@@ -3,13 +3,10 @@
 import sqlite3
 from db_search import Databasearcher
 database=Databasearcher("chinook.db")
-menu="""Choisissez une option:
-    1: Ajouter un élément
-    2: Enlever un élément
-    3: Afficher la liste
-    4: Vider la liste
-    5: Sauvegarder la liste
-    6: Quitter
-    """
-print(menu)
+choix2=input("entrez votre choix: ")
+if choix2==1 or choix2==2 or choix2==3:
+            print("Retente ta chance ") 
+else: print('ok)')
+        
+            
 

@@ -23,7 +23,12 @@ class Databasearcher :
     def lister_colonnes(self,table):
         
         colonnes=self.cursor.execute(f"PRAGMA table_info({table})").fetchall()
-        return colonnes                   
+        return colonnes    
+    def afficher_lignes(self, nom_table, n):
+          self.cursor.execute(f"SELECT * FROM {nom_table}")
+          lignes=self.cursor.fetchmany(n)
+          return lignes
+                        
     
     def executer_sql(self,requete_utilisateur):
         
@@ -32,7 +37,7 @@ class Databasearcher :
         if liste_mots_requete[0]== "SELECT":
             self.cursor.execute(requete_utilisateur)
             return self.cursor.fetchall()
-        else : print("requete invalide ou interdite seule la requete SELECT est autorisée")
+        else : return False
 
     def recupercation_type(self,nom_table, nom_colonne):
 
@@ -61,7 +66,5 @@ class Databasearcher :
                self.cursor.execute(f"SELECT COUNT (DISTINCT({nom_colonne})) FROM {nom_table}")
                count_distint=self.cursor.fetchall()
                return count_distint[0][0]
-
-                    
-              
+        
             
