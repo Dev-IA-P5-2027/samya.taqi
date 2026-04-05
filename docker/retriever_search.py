@@ -1,7 +1,11 @@
+#uv pip install transformers sentencepiece accelerate langchain_mistralai python-dotenv
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
-from langchain_core.documents import Document
+
+
+
+
 
 class RetrieverSearch:
     def __init__(self, 
@@ -17,16 +21,26 @@ class RetrieverSearch:
             collection_name=self.collection_name, 
             embedding=self.embeddings)
         
-    def get_retriever(self, k: int = 4) -> QdrantVectorStore.as_retriever:
-        """configure la recherche """
-        return self.vector_store.as_retriever(
-            search_type="similarity",
-            search_kwargs={"k": k},
-            
-        )
+
+        # self.generator = pipeline(
+        #     "any-to-any",
+        #     model="google/flan-t5-base"
+        # )
+
+        
+       
+    def search(self,query, k: int = 5, filter: dict = None):
+        """configure la recherche  """
+        return self.vector_store.similarity_search( 
+            query,
+            k=k,
+            filter=filter
+
+            )
     
-    def search(self, query: str, k: int = 3) -> list[Document]:
-        """Recherche simple où la query transformée en embedding"""
-        retriever = self.get_retriever(k)
-        results = retriever.invoke(query)
-        return results
+    # def search(self, query: str, k: int = 3) -> list[Document]:
+    #     """Recherche simple où la query transformée en embedding"""
+    #     retriever = self.get_retriever(k)
+    #     results = retriever.invoke(query)
+    #     return results
+
