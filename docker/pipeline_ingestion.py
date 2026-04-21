@@ -1,4 +1,4 @@
-#pip install qdrant-client langchain langchain-huggingface langchain-community transformers sentence-transformers  langchain_experimental  cryptography pypdf
+#pip install qdrant-client langchain langchain-huggingface langchain-community transformers sentence-transformers  langchain_experimental  cryptography pypdf langchain-mistalai python-dotenv
 
 import os
 from langchain_community.document_loaders import PyMuPDFLoader
@@ -10,22 +10,19 @@ from qdrant_client.http.models import Distance, VectorParams
 from langchain_experimental.text_splitter import SemanticChunker
 from uuid import uuid4
 import logging
+from config import settings
 
 logging.basicConfig(level=logging.INFO)
 
 
 class PipelineIngestion:
     """Pipeline d'ingestion de données pour la création d'une base vectorielle à partir des fichiers PDF"""
-    def __init__(self,
-                data_path: str,
-                collection_name: str = "test_docker",
-                model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
-        print(f"Dossier de données : {data_path}")
-        self.data_path = data_path
-        self.collection_name = collection_name
-        self.embeddings = HuggingFaceEmbeddings(model_name=model_name)
+    def __init__(self):
+        self.data_path = settings.data_path
+        self.collection_name = settings.collection_name
+        self.embeddings = HuggingFaceEmbeddings(model_name=settings.model_name)
 
-#objectif 1: lire tous les pdfs , extraire le texte et créer une liste de documents
+    """objectif 1: lire tous les pdfs , extraire le texte et créer une liste de documents"""
     def load_pdfs(self, limit:int| None=None) -> list[Document]:
         """lire tous les pdfs , extraire le texte et créer une liste de documents"""
         documents =[]
@@ -46,13 +43,7 @@ class PipelineIngestion:
                 documents.extend(docs) #Créer une liste de documents à partir de tous les fichiers pdfs de dossier data
         return documents[:limit] if limit else documents
     
-#objectif 2: splitter
-    # def split_documents(self, documents: list[Document], chunk_size: int = 500, chunk_overlap: int = 50) -> list[Document]:
-    #     """diviser les documents en chunks de taille 500 avec un chevauchement de 50"""
-    #     splitter_text=RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-    #     split_documents = splitter_text.split_documents(documents)
-    #     return split_documents
-    
+    """objectif 2: split des documents et extraire du texte """
     def split_documents(self, documents: list[Document]) -> list[Document]:
         """découpage semantique des documents"""
         splitter=SemanticChunker(
@@ -64,22 +55,13 @@ class PipelineIngestion:
         return chunks 
 
 
-#objectif 3: transformer les chunks en embeddings vectoriels
-    # def transform_embeddings(self, split_documents: list[Document]) -> list[Document]:
-    #     embeddings=HuggingFaceEmbeddings (model_name="sentence-transformers/all-MiniLM-L6-v2")
-    #     vector_embeddings=embeddings.embed_documents(
-    #         [doc.page_content for doc in split_documents])
-       
-    #     for i, doc in enumerate(split_documents):
-    #         doc.metadata["embedding"]=vector_embeddings[i]
-    #     return split_documents
-
-    def store_in_qdrant(self, split_documents: list[Document], 
-                    url="http://localhost:6333"):
+    """"Objectif 3: transformer les morceaux du texte en vecteur de nombre et les strocker dans une base vectorielle qdrant"""
+    def store_in_qdrant(self, split_documents :list[Document], 
+                    qdrant_url="host:'qdrant', port:6333"):
         """transformer les chunks en embeddings, et stocker les embeddings dans Qdrant"""
         
-        client=QdrantClient(url=url)
-        #vérifier si la collection existe déjà, sinon la créer
+        client=QdrantClient(url=qdrant_url)
+        #vérifier si la collection existe déjà sinon la créer
         
         try:
             client.get_collection(collection_name=self.collection_name)
@@ -90,6 +72,7 @@ class PipelineIngestion:
                 vectors_config= models.VectorParams(size=vector_size,
                                                     distance=Distance.COSINE)
             )
+        
         #Génération des points à partir des chunks de documents et de leurs embeddings
         points=[]
         batch_size=64
@@ -102,7 +85,7 @@ class PipelineIngestion:
     
         for doc, vector in zip(split_documents,vectors):
             points.append(models.PointStruct(
-                id=str(uuid4()),
+                id=str(uuid4()), # 
                 vector=vector,
                 payload={"text": doc.page_content,
                         "source": doc.metadata.get("source"),
@@ -113,9 +96,5 @@ class PipelineIngestion:
             collection_name=self.collection_name,
             points=points
         ) #envoie les données dans la base vectorielle Qdrant
-        logging.info(f"{len(points):points ajoutés dans Qdrant}")
+        logging.info(f"{len(points):points ajoutés dans Qdrant}") #enregistrement des messages et des erreurs dans le programme lors de l'exécusion
         return points
-def run(self):
-    docs = self.load_pdfs()
-    chunks = self.split_documents(docs)
-    self.store_in_qdrant(chunks)

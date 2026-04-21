@@ -45,4 +45,13 @@ docker build -t <image> .
 docker tag <image><repository>
 docker push <reposotory>
 '''
+************
+Commandes mkdocs
+## Lancer le serveur de développement
+'''console vscode
+uv pip install mkdocs
+mkdocs new <nom du projet> ou bien . -> pour créer le projet dans le répertoire actuel
+mkdocs serve -> pour lancer le serveur de développement
+uv pip install mkdocs-material 
+'''
 

@@ -2,45 +2,29 @@
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
-
-
-
+from config import settings
 
 
 class RetrieverSearch:
-    def __init__(self, 
-                collection_name: str = "test_docker", 
-                model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
-                url:str="http://localhost:6333"):
-        self.collection_name = collection_name
-        self.url = url
-        self.embeddings = HuggingFaceEmbeddings(model_name=model_name)
-        self.client = QdrantClient(url=self.url)
+    def __init__(self ): #!url de qdrant dans le docker compose qdrant_container
+        self.collection_name = settings.collection_name
+        self.qdrant_url = settings.qdrant_url
+
+        self.embeddings = HuggingFaceEmbeddings(model_name=settings.model_name)
+        self.client = QdrantClient(url=self.qdrant_url)
+
         self.vector_store = QdrantVectorStore(
             client=self.client,
             collection_name=self.collection_name, 
             embedding=self.embeddings)
         
-
-        # self.generator = pipeline(
-        #     "any-to-any",
-        #     model="google/flan-t5-base"
-        # )
-
-        
        
-    def search(self,query, k: int = 5, filter: dict = None):
+    def search(self,query, k: int = None, filter: dict = None):
         """configure la recherche  """
+        k = k or settings.top_k
         return self.vector_store.similarity_search( 
             query,
-            k=k,
+            k=int(k),
             filter=filter
-
-            )
+)
     
-    # def search(self, query: str, k: int = 3) -> list[Document]:
-    #     """Recherche simple où la query transformée en embedding"""
-    #     retriever = self.get_retriever(k)
-    #     results = retriever.invoke(query)
-    #     return results
-
