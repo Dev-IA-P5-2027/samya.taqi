@@ -1,5 +1,0 @@
-services:
-  ping-ip:
-    build: .
-    container_name: ping-ip
-    restart: unless-stopped 
